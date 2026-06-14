@@ -5,9 +5,30 @@ import { readAlerts, readRules } from "@/lib/storage"
 import { StatsGrid } from "@/components/dashboard/StatsGrid"
 import { SpendChart } from "@/components/dashboard/SpendChart"
 import { CampaignMiniList } from "@/components/dashboard/CampaignMiniList"
-import { AlertItem } from "@/components/notifications/AlertItem"
-import { greeting } from "@/lib/utils"
 import { DailyInsight } from "@/lib/types"
+import { timeAgo } from "@/lib/utils"
+import { Zap, TrendingUp, PauseCircle, RotateCcw } from "lucide-react"
+
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 12) return "Good morning"
+  if (h < 18) return "Good afternoon"
+  return "Good evening"
+}
+
+const ACTION_ICONS = {
+  pause: PauseCircle,
+  resume: RotateCcw,
+  scale_budget: TrendingUp,
+  notify_only: Zap,
+} as const
+
+const ACTION_COLORS = {
+  pause: "text-red-500",
+  resume: "text-emerald-500",
+  scale_budget: "text-blue-500",
+  notify_only: "text-indigo-500",
+} as const
 
 export default async function DashboardPage() {
   const client = await getUserClient()
@@ -20,7 +41,6 @@ export default async function DashboardPage() {
     readRules(),
   ])
 
-  // Fetch insights for all campaigns in parallel (30d for chart)
   const insightsResults = await Promise.allSettled(
     campaigns.map((c) => fetchCampaignInsights(c.id, client.metaAccessToken, 30))
   )
@@ -51,7 +71,6 @@ export default async function DashboardPage() {
     return { ...c, insights: { last7d: agg, dailySeries: series } }
   })
 
-  // Build combined daily series for chart
   const dateMap: Record<string, DailyInsight> = {}
   for (const c of campaignsWithInsights) {
     for (const d of c.insights.dailySeries) {
@@ -65,27 +84,45 @@ export default async function DashboardPage() {
     .filter((a) => allRules.some((r) => r.id === a.ruleId && r.clientId === client.id))
     .slice(0, 5)
 
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="space-y-6 max-w-7xl">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-zinc-900">{greeting()}, {client.name}</h2>
-        <p className="text-zinc-500 text-sm mt-1">Here&apos;s how your campaigns are performing.</p>
+        <h2 className="text-xl font-bold text-foreground">{greeting()}, {client.name.split(" ")[0]}</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">{today} · Here&apos;s how your campaigns are performing.</p>
       </div>
 
       <StatsGrid campaigns={campaignsWithInsights} accountInfo={accountInfo} />
 
       {chartData.length > 0 && <SpendChart data={chartData} />}
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6">
         <CampaignMiniList campaigns={campaignsWithInsights} />
 
         {clientAlerts.length > 0 && (
-          <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-zinc-700 mb-3">Recent Notifications</h3>
-            <div>
-              {clientAlerts.map((a) => (
-                <AlertItem key={a.id} alert={a} compact />
-              ))}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Recent Activity</h3>
+            <div className="space-y-3">
+              {clientAlerts.map((a) => {
+                const Icon = ACTION_ICONS[a.action] ?? Zap
+                const color = ACTION_COLORS[a.action] ?? "text-indigo-500"
+                return (
+                  <div key={a.id} className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                      <Icon className={`h-3.5 w-3.5 ${color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground leading-snug">
+                        <span className="font-medium">{a.action.replace("_", " ")}</span>
+                        {" · "}<span className="text-muted-foreground truncate">{a.campaignName}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(a.timestamp)}</p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
