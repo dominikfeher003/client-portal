@@ -6,10 +6,11 @@ import { DailyInsight } from "@/lib/types"
 interface Props { data: DailyInsight[] }
 
 export function SpendChart({ data }: Props) {
-  const formatted = data.map((d) => ({
-    date: new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    spend: Math.round(d.spend * 100) / 100,
-  }))
+  const formatted = data.map((d) => {
+    const [y, m, day] = d.date.split("-").map(Number)
+    const label = new Date(y, m - 1, day).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    return { date: label, spend: Math.round(d.spend * 100) / 100 }
+  })
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">

@@ -5,12 +5,19 @@ import { formatCurrency } from "@/lib/utils"
 import { TrendingUp, DollarSign, Activity, Wallet } from "lucide-react"
 import { KPICard } from "@/components/ui/kpi-card"
 
+interface ChartPoint { date: string; value: number }
+
 interface Props {
   campaigns: Campaign[]
   accountInfo: AccountInfo
+  metricSeries?: {
+    spend: ChartPoint[]
+    roas: ChartPoint[]
+    impressions: ChartPoint[]
+  }
 }
 
-export function StatsGrid({ campaigns, accountInfo }: Props) {
+export function StatsGrid({ campaigns, accountInfo, metricSeries }: Props) {
   const active = campaigns.filter((c) => c.status === "ACTIVE").length
   const totalSpend = campaigns.reduce((s, c) => s + c.insights.last7d.spend, 0)
   const avgRoas = campaigns.length > 0
@@ -37,6 +44,9 @@ export function StatsGrid({ campaigns, accountInfo }: Props) {
         iconColor="text-blue-600"
         iconBg="bg-blue-50 dark:bg-blue-950/50"
         delta={{ value: "7d", positive: null }}
+        chartData={metricSeries?.spend}
+        chartColor="#3b82f6"
+        chartFormatter={(v) => `$${Number(v).toFixed(0)}`}
       />
       <KPICard
         index={1}
@@ -46,6 +56,9 @@ export function StatsGrid({ campaigns, accountInfo }: Props) {
         iconColor={roasColor}
         iconBg={roasBg}
         delta={{ value: avgRoas >= 3 ? "Good" : avgRoas >= 1.5 ? "Fair" : "Low", positive: roasPositive }}
+        chartData={metricSeries?.roas}
+        chartColor={avgRoas >= 3 ? "#10b981" : avgRoas >= 1.5 ? "#f59e0b" : "#ef4444"}
+        chartFormatter={(v) => `${Number(v).toFixed(2)}x`}
       />
       <KPICard
         index={2}
@@ -55,6 +68,12 @@ export function StatsGrid({ campaigns, accountInfo }: Props) {
         iconColor="text-indigo-600"
         iconBg="bg-indigo-50 dark:bg-indigo-950/50"
         delta={{ value: `of ${campaigns.length} total`, positive: null }}
+        chartData={metricSeries?.impressions}
+        chartColor="#6366f1"
+        chartFormatter={(v) => {
+          const n = Number(v)
+          return n >= 1000 ? `${(n / 1000).toFixed(1)}k imp.` : `${n} imp.`
+        }}
       />
       <KPICard
         index={3}
@@ -63,6 +82,9 @@ export function StatsGrid({ campaigns, accountInfo }: Props) {
         icon={Wallet}
         iconColor="text-emerald-600"
         iconBg="bg-emerald-50 dark:bg-emerald-950/50"
+        chartData={metricSeries?.spend}
+        chartColor="#10b981"
+        chartFormatter={(v) => `$${Number(v).toFixed(0)} spent`}
       />
     </div>
   )

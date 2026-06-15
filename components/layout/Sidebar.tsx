@@ -138,7 +138,7 @@ export function Sidebar({ open, onClose, collapsed, onCollapse, clientName }: Pr
         </div>
 
         {/* Nav */}
-        <nav className={cn("flex-1 overflow-y-auto py-3", collapsed ? "px-1.5" : "px-3")}>
+        <nav className={cn("flex-1 overflow-y-auto py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", collapsed ? "px-1.5" : "px-3")}>
           {NAV_GROUPS.map((group) => (
             <div key={group.label} className="mb-4">
               {!collapsed && (
@@ -173,25 +173,31 @@ export function Sidebar({ open, onClose, collapsed, onCollapse, clientName }: Pr
             ))}
           </div>
 
-          {/* User */}
-          <div className={cn(
-            "flex items-center gap-3 pt-3 border-t border-zinc-800",
-            collapsed ? "justify-center" : "px-1"
-          )}>
-            <UserButton />
-            {!collapsed && (
-              <span className="text-xs text-zinc-500 truncate">Account</span>
-            )}
-          </div>
-
           {/* Collapse toggle (desktop only) */}
           <button
             onClick={() => onCollapse(!collapsed)}
-            className="hidden md:flex items-center justify-center w-full mt-3 py-1.5 rounded-md text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800 transition-colors text-xs gap-1.5"
+            className="hidden md:flex items-center justify-center w-full py-1.5 rounded-md text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800 transition-colors text-xs gap-1.5"
           >
             {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
             {!collapsed && <span>Collapse</span>}
           </button>
+
+          {/* Brand block — replaces "Account" label */}
+          <div className={cn(
+            "flex items-center pt-3 mt-1 border-t border-zinc-800",
+            collapsed ? "justify-center" : "gap-2.5 px-1"
+          )}>
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+              <span className="text-white text-[10px] font-bold">DM</span>
+            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-xs font-bold leading-none truncate">Developers Market</p>
+                <p className="text-zinc-500 text-[10px] mt-0.5 truncate">{clientName}</p>
+              </div>
+            )}
+            <UserButton />
+          </div>
         </div>
       </motion.aside>
     </>
